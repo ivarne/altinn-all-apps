@@ -1,0 +1,45 @@
+namespace allApps;
+public abstract class CreatePullRequestJob : IJob
+{
+    private readonly string _folderPath;
+    private readonly string _gitUrl;
+    private readonly string _forkGitUrl;
+    private readonly string _newBranchName;
+
+    protected CreatePullRequestJob(string folderPath, string gitUrl, string forkGitUrl, string newBranchName, string commitMessage)
+    {
+        _folderPath = folderPath;
+        _gitUrl = gitUrl;
+        _forkGitUrl = forkGitUrl;
+        _newBranchName = newBranchName;
+        _commitMessage = commitMessage;
+    }
+
+    public abstract void DoChanges();
+
+    public void Run()
+    {
+        var gitWrapper = new GitWrapper(_folderPath);
+        gitWrapper.Clone(_gitUrl);
+        gitWrapper.AddRemote("fork", _forkGitUrl);
+        gitWrapper.Checkout(_newBranchName);
+        DoChanges();
+
+        // Checkout the repository using GitWrapper
+        var repo = new GitWrapper().CheckoutRepository(_folderPath, _gitUrl))
+        {
+            // Create a new branch
+            var branch = repo.CreateBranch(_newBranchName);
+
+            // Checkout the new branch
+            repo.Checkout(branch);
+
+            // Call the DoChanges method
+            DoChanges();
+
+            // Push the new branch to the remote repository
+            var remote = repo.Network.Remotes["origin"];
+            repo.Network.Push(remote, $"refs/heads/{_newBranchName}");
+        }
+    }
+}
