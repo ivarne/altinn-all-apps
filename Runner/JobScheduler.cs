@@ -67,9 +67,9 @@ public class ConcurrentJobScheduler
         if (!result.IsSuccess)
         {
             Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Completed: {result.Name} {(result.IsSuccess ? "with" : "without")} success");
+            Console.ResetColor();
+            Console.WriteLine(result.Output);
         }
-        Console.WriteLine($"Completed: {result.Name} {(result.IsSuccess ? "with" : "without")} success");
-        Console.ResetColor();
-        Console.WriteLine(result.Output);
     }
 }

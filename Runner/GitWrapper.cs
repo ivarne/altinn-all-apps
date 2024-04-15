@@ -12,8 +12,12 @@ public class GitWrapper
     {
         _workingDirectory = workingDirectory;
     }
-    public async Task<GitCommandResult> Clone(string repositoryUrl)
+    public async Task<GitCommandResult> Clone(string repositoryUrl, string? apiKey)
     {
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+            repositoryUrl = repositoryUrl.Replace("https://", $"https://{apiKey}@");
+        }
         return await ExecuteGitCommand($"clone {repositoryUrl} .");
     }
 
@@ -45,6 +49,10 @@ public class GitWrapper
     public async Task<GitCommandResult> Pull()
     {
         return await ExecuteGitCommand($"pull");
+    }
+    public async Task<GitCommandResult> WorktreeAdd(string deploymentPath, string commit)
+    {
+        return await ExecuteGitCommand($"worktree add {deploymentPath} {commit}");
     }
 
     private async Task<GitCommandResult> ExecuteGitCommand(string command)

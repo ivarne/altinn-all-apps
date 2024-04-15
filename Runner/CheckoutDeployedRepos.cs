@@ -27,7 +27,7 @@ public class CheckoutDeployedReposJobStarter
                         Org = org.Name,
                         RepoName = deployment.RepoName,
                         Commit = deployment.Commit,
-                        Environment = environment
+                        Environment = environment,
                     });
                 }
             }
@@ -44,8 +44,9 @@ public class CheckoutDeployedReposJobStarter
             if (!result.IsSuccess)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Completed: {result.Name} {(result.IsSuccess ? "with" : "without")} success");
+                Console.ResetColor();
             }
-            Console.WriteLine($"Completed: {result.Name} {(result.IsSuccess ? "with" : "without")} success");
         }
         await schedulerTask;
     }
@@ -64,32 +65,17 @@ public class CheckoutDeployedRepoJob : IJob
 
     public async Task<JobResult> Run()
     {
-        var repoPath = Path.Join(Environment, Org, RepoName);
+        var repoPath = Path.Join("main", Org, RepoName);
+        var deploymentPath = Path.Join(Environment, Org, RepoName);
         var git = new GitWrapper(repoPath);
 
-        if (!Directory.Exists(Path.Join(repoPath, ".git")))
-        {
-            // check if repo exists
+        var worktreeResult = await git.WorktreeAdd(deploymentPath, Commit);
 
-            Directory.CreateDirectory(repoPath);
-            var gitCloneResult = await git.Clone(RepoUrl);
-            if (!gitCloneResult.IsSuccess)
-            {
-                return new CheckoutResult() { IsSuccess = false, Name = Name, RepoName = RepoName, Commit = Commit, StdErr = gitCloneResult.StdErr, StdOut = gitCloneResult.StdOut };
-            }
+        if (!worktreeResult.IsSuccess)
+        {
+            return new CheckoutResult() { IsSuccess = false, Name = Name, RepoName = RepoName, Commit = Commit, StdErr = worktreeResult.StdErr, StdOut = worktreeResult.StdOut };
         }
 
-        var gitFetchResult = await git.Fetch(Commit);
-        if (!gitFetchResult.IsSuccess)
-        {
-            return new CheckoutResult() { IsSuccess = false, Name = Name, RepoName = RepoName, Commit = Commit, StdErr = gitFetchResult.StdErr, StdOut = gitFetchResult.StdOut };
-        }
-
-        var gitCheckoutResult = await git.Checkout(Commit);
-        if (!gitCheckoutResult.IsSuccess)
-        {
-            return new CheckoutResult() { IsSuccess = false, Name = Name, RepoName = RepoName, Commit = Commit, StdErr = gitCheckoutResult.StdErr, StdOut = gitCheckoutResult.StdOut };
-        }
         return new CheckoutResult() { IsSuccess = true, Name = Name, RepoName = RepoName, Commit = Commit };
     }
 
